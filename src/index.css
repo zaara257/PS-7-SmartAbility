@@ -1,0 +1,92 @@
+@import "@fontsource/fredoka/400.css";
+@import "@fontsource/fredoka/600.css";
+@import "@fontsource/baloo-2/400.css";
+@import "@fontsource/baloo-2/600.css";
+@import "@fontsource/baloo-2/700.css";
+@import "@fontsource/baloo-2/800.css";
+
+@import "tailwindcss";
+
+@theme {
+  /* ── Colors ──────────────────────────────────────────── */
+  --color-forest-green:    #4A7C59;
+  --color-leaf-green:      #7FB069;
+  --color-sky-blue:        #A8DADC;
+  --color-sunshine-yellow: #F4D35E;
+  --color-soil-brown:      #8B6247;
+  --color-bark-brown:      #6B4A3D;
+  --color-flower-pink:     #F2A6B0;
+  --color-flower-orange:   #F4A259;
+  --color-flower-purple:   #B784A7;
+  --color-cream-bg:        #FDF8EE;
+
+  /* ── Border radius ───────────────────────────────────── */
+  --radius-sm:   16px;
+  --radius-md:   24px;
+  --radius-lg:   32px;
+  --radius-full: 999px;
+
+  /* ── Fonts ───────────────────────────────────────────── */
+  --font-fredoka: "Fredoka", sans-serif;
+  --font-baloo:   "Baloo 2", cursive;
+}
+
+/* ─── prefers-reduced-motion ─────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ─── Base reset & body ──────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #FDF8EE;
+  font-family: "Fredoka", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Typography defaults ────────────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Baloo 2", cursive;
+  font-weight: 700;
+}
+
+/* ─── Scrollbar styling ──────────────────────────────────── */
+::-webkit-scrollbar        { width: 6px; }
+::-webkit-scrollbar-track  { background: #FDF8EE; }
+::-webkit-scrollbar-thumb  { background: #7FB069; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #4A7C59; }
+
+/* ─── Focus ring overrides ───────────────────────────────── */
+:focus-visible {
+  outline: 3px solid #4A7C59;
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+/* ─── Number input arrows removed ───────────────────────── */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}

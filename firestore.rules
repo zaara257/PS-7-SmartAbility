@@ -1,0 +1,26 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Parents collection ─────────────────────────────────────────────────
+    // A parent can only read/write their own document.
+    match /parents/{parentId} {
+      allow read, write: if request.auth != null
+                         && request.auth.uid == parentId;
+
+      // ── Children subcollection ─────────────────────────────────────────
+      // A parent can only read/write children under their own parentId.
+      // No other parent or unauthenticated user can access these documents.
+      match /children/{childId} {
+        allow read, write: if request.auth != null
+                           && request.auth.uid == parentId;
+      }
+    }
+
+    // Deny all other access by default (Firestore default is deny, but
+    // explicit denial makes the intent clear for auditing purposes).
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
