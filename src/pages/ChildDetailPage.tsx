@@ -1,45 +1,191 @@
 // src/pages/ChildDetailPage.tsx
-// STUB: Phase 2 will replace this with the full garden visualization.
-// This route exists as a hook point — it reads the child's doc and renders
-// their name + current garden stage. Full reward/game logic comes later.
+// Full child detail page — replaces Phase 1 stub.
+// Sections:
+//   • Header (back + name)
+//   • Garden snapshot (GardenIllustration) + stats + AdvanceStageControl
+//   • Unlocked Gated Reward Cards (Large colorful game tiles layout)
+//   • RewardEngine overlay (shown while a reward is active)
+//   • StickerSheetGallery (all past rewards, real-time via onSnapshot)
 
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
-import type { Child } from "../types/child";
+import type { Child, GardenStage } from "../types/child";
+import type { RewardLevel } from "../types/reward";
 import GardenIllustration from "../components/ui/GardenIllustration";
 import Button from "../components/ui/Button";
+import RewardEngine from "../components/rewards/RewardEngine";
+import StickerSheetGallery from "../components/rewards/StickerSheetGallery";
+
+// Ordered stage sequence for the advance control
+const STAGE_SEQUENCE: GardenStage[] = [
+  "seed", "sprout", "sapling", "smallTree", "cocoon", "butterfly", "fullTree",
+];
+
+const STAGE_LABELS: Record<GardenStage, string> = {
+  seed:      "🌱 Seed",
+  sprout:    "🌿 Sprout",
+  sapling:   "🌳 Sapling",
+  smallTree: "🌲 Small Tree",
+  cocoon:    "🫘 Cocoon",
+  butterfly: "🦋 Butterfly",
+  fullTree:  "🌳 Full Garden",
+};
+
+interface RewardCardDef {
+  level: RewardLevel;
+  emoji: string;
+  title: string;
+  description: string;
+  colorClass: string;
+  borderColorClass: string;
+  badgeBg: string;
+}
+
+const REWARD_CARDS: RewardCardDef[] = [
+  {
+    level: 1,
+    emoji: "🎟️",
+    title: "Stamp Video",
+    description: "Watch a fun animal, superhero, or fantasy video stamp!",
+    colorClass: "bg-leaf-green/10",
+    borderColorClass: "border-leaf-green/30",
+    badgeBg: "bg-leaf-green",
+  },
+  {
+    level: 2,
+    emoji: "🎈",
+    title: "Balloon Burst",
+    description: "Float colorful balloons with happy musical chimes!",
+    colorClass: "bg-sky-blue/15",
+    borderColorClass: "border-sky-blue/40",
+    badgeBg: "bg-forest-green",
+  },
+  {
+    level: 3,
+    emoji: "🐾",
+    title: "Character Friend",
+    description: "Play a special video of your favorite animals & cartoons!",
+    colorClass: "bg-flower-orange/15",
+    borderColorClass: "border-flower-orange/40",
+    badgeBg: "bg-flower-orange",
+  },
+  {
+    level: 4,
+    emoji: "📜",
+    title: "Rhyme Time",
+    description: "Read a happy rhyme with loud clapping cheers!",
+    colorClass: "bg-sunshine-yellow/15",
+    borderColorClass: "border-sunshine-yellow/40",
+    badgeBg: "bg-soil-brown",
+  },
+  {
+    level: 5,
+    emoji: "🎂",
+    title: "Slice the Cake",
+    description: "Cut a delicious cake to celebrate your achievements!",
+    colorClass: "bg-flower-pink/15",
+    borderColorClass: "border-flower-pink/40",
+    badgeBg: "bg-flower-pink",
+  },
+];
+
+// ── Advance Garden Stage control (parent-facing, calm styling) ───────────────
+
+interface AdvanceStageControlProps {
+  currentStage: GardenStage;
+  childId: string;
+  parentId: string;
+}
+
+function AdvanceStageControl({ currentStage, childId, parentId }: AdvanceStageControlProps) {
+  const [advancing, setAdvancing] = useState(false);
+  const currentIdx = STAGE_SEQUENCE.indexOf(currentStage);
+  const isMax = currentIdx >= STAGE_SEQUENCE.length - 1;
+  const nextStage = isMax ? null : STAGE_SEQUENCE[currentIdx + 1];
+
+  const handleAdvance = async () => {
+    if (!nextStage || advancing) return;
+    setAdvancing(true);
+    try {
+      await updateDoc(doc(db, "parents", parentId, "children", childId), {
+        gardenStage: nextStage,
+      });
+    } catch (err) {
+      console.error("[AdvanceStageControl] error:", err);
+    } finally {
+      setAdvancing(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center gap-2 mt-2">
+      <span className="font-fredoka text-sm text-soil-brown/60">
+        Garden stage: <strong className="text-bark-brown">{STAGE_LABELS[currentStage]}</strong>
+      </span>
+      {!isMax ? (
+        <button
+          onClick={handleAdvance}
+          disabled={advancing}
+          aria-label={`Advance garden stage to ${nextStage}`}
+          className={`
+            text-xs font-fredoka px-4 py-1.5 rounded-full border
+            border-leaf-green/40 bg-white/60 text-forest-green
+            hover:bg-leaf-green/10 hover:border-forest-green
+            transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed
+            cursor-pointer
+          `}
+        >
+          {advancing ? "Growing…" : `↑ Advance to ${STAGE_LABELS[nextStage!]}`}
+        </button>
+      ) : (
+        <span className="text-xs font-fredoka text-leaf-green bg-leaf-green/10 px-3 py-1 rounded-full border border-leaf-green/30">
+          🌳 Maximum stage reached!
+        </span>
+      )}
+    </div>
+  );
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function ChildDetailPage() {
   const { childId } = useParams<{ childId: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
+
   const [child, setChild] = useState<Child | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [activeLevel, setActiveLevel] = useState<RewardLevel | null>(null);
 
+  // Real-time listener — keeps stickerSheet and stickerCount live
   useEffect(() => {
     if (!user || !childId) return;
 
-    const fetchChild = async () => {
-      try {
-        const ref = doc(db, "parents", user.uid, "children", childId);
-        const snap = await getDoc(ref);
+    const ref = doc(db, "parents", user.uid, "children", childId);
+    const unsub = onSnapshot(
+      ref,
+      (snap) => {
         if (snap.exists()) {
           setChild({ id: snap.id, ...(snap.data() as Omit<Child, "id">) } as Child);
         } else {
           setNotFound(true);
         }
-      } finally {
         setLoading(false);
-      }
-    };
+      },
+      (err) => {
+        console.error("[ChildDetailPage] snapshot error:", err);
+        setLoading(false);
+      },
+    );
 
-    fetchChild();
+    return unsub;
   }, [user, childId]);
 
+  // ── Loading ────────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="min-h-screen bg-cream-bg flex items-center justify-center">
@@ -48,6 +194,7 @@ export default function ChildDetailPage() {
     );
   }
 
+  // ── Not found ──────────────────────────────────────────────────────────────
   if (notFound || !child) {
     return (
       <div className="min-h-screen bg-cream-bg flex flex-col items-center justify-center gap-4 p-6">
@@ -59,26 +206,24 @@ export default function ChildDetailPage() {
     );
   }
 
-  const stageLabels: Record<Child["gardenStage"], string> = {
-    seed:      "🌱 Seed",
-    sprout:    "🌿 Sprout",
-    sapling:   "🌳 Sapling",
-    smallTree: "🌲 Small Tree",
-    cocoon:    "🫘 Cocoon",
-    butterfly: "🦋 Butterfly",
-    fullTree:  "🌳 Full Garden",
-  };
+  const stickerSheet = child.stickerSheet ?? [];
+
+  // Level Gating Math:
+  const stageIdx = STAGE_SEQUENCE.indexOf(child.gardenStage);
+  const unlockedCount = Math.max(1, Math.min(5, stageIdx + 1));
+  const visibleCards = REWARD_CARDS.slice(0, unlockedCount);
 
   return (
     <div className="min-h-screen bg-cream-bg">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-forest-green to-leaf-green px-4 py-4">
+      {/* ── Header ──────────────────────────────────────────────────────────── */}
+      <header className="bg-gradient-to-r from-forest-green to-leaf-green px-4 py-4 shadow-md shadow-forest-green/20">
         <div className="max-w-2xl mx-auto flex items-center gap-4">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate("/home")}
             className="border-white/30 text-white hover:bg-white/20 hover:text-white"
+            id="back-to-home"
           >
             ← Back
           </Button>
@@ -88,39 +233,111 @@ export default function ChildDetailPage() {
         </div>
       </header>
 
-      {/* STUB content */}
-      <main className="max-w-2xl mx-auto px-4 py-12 flex flex-col items-center gap-6 text-center">
-        <GardenIllustration stage={child.gardenStage} className="w-40 h-40" />
+      <main className="max-w-2xl mx-auto px-4 py-8 flex flex-col gap-8">
 
-        <div>
-          <h2 className="font-baloo text-3xl font-bold text-bark-brown">{child.name}</h2>
-          <p className="font-fredoka text-xl text-forest-green mt-1">
-            {stageLabels[child.gardenStage]}
-          </p>
-        </div>
+        {/* ── Garden snapshot + stats ────────────────────────────────────── */}
+        <section
+          className="bg-white/70 rounded-3xl border border-leaf-green/20 shadow-sm p-6 flex flex-col items-center gap-4"
+          aria-label="Garden overview"
+        >
+          <GardenIllustration stage={child.gardenStage} className="w-36 h-36" />
 
-        {/* Stats */}
-        <div className="flex gap-8">
-          <div className="flex flex-col items-center">
-            <span className="text-3xl">⭐</span>
-            <span className="font-baloo text-2xl font-bold text-bark-brown">{child.stickerCount}</span>
-            <span className="font-fredoka text-sm text-soil-brown/60">stickers</span>
+          <h2 className="font-baloo text-3xl font-bold text-bark-brown text-center">
+            {child.name}
+          </h2>
+
+          {/* Stats row */}
+          <div className="flex gap-10">
+            <div className="flex flex-col items-center">
+              <span className="text-3xl">⭐</span>
+              <span className="font-baloo text-2xl font-bold text-bark-brown">{child.stickerCount}</span>
+              <span className="font-fredoka text-xs text-soil-brown/60">stickers</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-3xl">🏅</span>
+              <span className="font-baloo text-2xl font-bold text-bark-brown">{child.badges?.length ?? 0}</span>
+              <span className="font-fredoka text-xs text-soil-brown/60">badges</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-3xl">🌟</span>
+              <span className="font-baloo text-2xl font-bold text-bark-brown">{stickerSheet.length}</span>
+              <span className="font-fredoka text-xs text-soil-brown/60">rewards</span>
+            </div>
           </div>
-          <div className="flex flex-col items-center">
-            <span className="text-3xl">🏅</span>
-            <span className="font-baloo text-2xl font-bold text-bark-brown">{child.badges.length}</span>
-            <span className="font-fredoka text-sm text-soil-brown/60">badges</span>
-          </div>
-        </div>
 
-        {/* Phase 2 placeholder notice */}
-        <div className="bg-sunshine-yellow/20 border border-sunshine-yellow/50 rounded-3xl px-6 py-4 max-w-sm">
-          <p className="font-fredoka text-bark-brown text-sm">
-            🚧 <strong>Phase 2 coming soon!</strong><br />
-            The full garden view, reward system, and sticker collection will bloom here.
-          </p>
-        </div>
+          {/* Garden stage advance control — parent/therapist facing */}
+          <AdvanceStageControl
+            currentStage={child.gardenStage}
+            childId={child.id}
+            parentId={user!.uid}
+          />
+        </section>
+
+        {/* ── Gated Large Reward Card Tiles ──────────────────────────────── */}
+        <section aria-label="Available Rewards">
+          <h3 className="font-baloo text-2xl font-bold text-bark-brown mb-4 text-center">
+            Choose Your Reward! ✨
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {visibleCards.map((card) => (
+              <button
+                key={card.level}
+                onClick={() => setActiveLevel(card.level)}
+                disabled={activeLevel !== null}
+                className={`
+                  flex flex-col items-start text-left p-6 rounded-3xl border-2
+                  ${card.colorClass} ${card.borderColorClass}
+                  transition-all duration-200 cursor-pointer
+                  hover:-translate-y-1 hover:shadow-md hover:brightness-102
+                  active:scale-98
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                `}
+                id={`reward-card-${card.level}`}
+              >
+                {/* Level Tag */}
+                <span className={`text-white text-xs font-bold font-fredoka px-2.5 py-1 rounded-full ${card.badgeBg} mb-3`}>
+                  Level {card.level}
+                </span>
+                {/* Visual Header */}
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="text-4xl leading-none select-none" role="img" aria-hidden="true">
+                    {card.emoji}
+                  </span>
+                  <span className="font-baloo text-xl font-bold text-bark-brown leading-tight">
+                    {card.title}
+                  </span>
+                </div>
+                {/* Subtitle description */}
+                <p className="font-fredoka text-sm text-soil-brown/80 leading-snug">
+                  {card.description}
+                </p>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Sticker sheet gallery ──────────────────────────────────────── */}
+        <section aria-label="Sticker sheet">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-baloo text-xl font-bold text-bark-brown">Sticker Sheet</h2>
+            <span className="font-fredoka text-sm text-soil-brown/50 bg-white/60 border border-leaf-green/20 rounded-full px-3 py-0.5">
+              {stickerSheet.length} {stickerSheet.length === 1 ? "reward" : "rewards"}
+            </span>
+          </div>
+          <StickerSheetGallery entries={stickerSheet} />
+        </section>
+
       </main>
+
+      {/* ── RewardEngine overlay (shown while a level is active) ──────────── */}
+      {activeLevel !== null && (
+        <RewardEngine
+          key={activeLevel}
+          level={activeLevel}
+          child={child}
+          onComplete={() => setActiveLevel(null)}
+        />
+      )}
     </div>
   );
 }
