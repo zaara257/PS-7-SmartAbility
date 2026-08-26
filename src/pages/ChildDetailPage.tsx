@@ -18,6 +18,7 @@ import GardenIllustration from "../components/ui/GardenIllustration";
 import Button from "../components/ui/Button";
 import RewardEngine from "../components/rewards/RewardEngine";
 import StickerSheetGallery from "../components/rewards/StickerSheetGallery";
+import WebcamScanner from "../components/rewards/WebcamScanner";
 
 // Ordered stage sequence for the advance control
 const STAGE_SEQUENCE: GardenStage[] = [
@@ -275,44 +276,41 @@ export default function ChildDetailPage() {
 
         {/* ── Gated Large Reward Card Tiles ──────────────────────────────── */}
         <section aria-label="Available Rewards">
-          <h3 className="font-baloo text-2xl font-bold text-bark-brown mb-4 text-center">
-            Choose Your Reward! ✨
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {visibleCards.map((card) => (
-              <button
-                key={card.level}
-                onClick={() => setActiveLevel(card.level)}
-                disabled={activeLevel !== null}
-                className={`
-                  flex flex-col items-start text-left p-6 rounded-3xl border-2
-                  ${card.colorClass} ${card.borderColorClass}
-                  transition-all duration-200 cursor-pointer
-                  hover:-translate-y-1 hover:shadow-md hover:brightness-102
-                  active:scale-98
-                  disabled:opacity-50 disabled:cursor-not-allowed
-                `}
-                id={`reward-card-${card.level}`}
-              >
-                {/* Level Tag */}
-                <span className={`text-white text-xs font-bold font-fredoka px-2.5 py-1 rounded-full ${card.badgeBg} mb-3`}>
-                  Level {card.level}
-                </span>
-                {/* Visual Header */}
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="text-4xl leading-none select-none" role="img" aria-hidden="true">
-                    {card.emoji}
+          <WebcamScanner 
+            onRewardDetected={setActiveLevel}
+            unlockedCount={unlockedCount}
+          />
+          
+          <div className="mt-8">
+            <h3 className="font-baloo text-xl font-bold text-bark-brown mb-4 text-center">
+              Available Rewards Guide
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 opacity-75">
+              {visibleCards.map((card) => (
+                <div
+                  key={card.level}
+                  className={`
+                    flex flex-col items-start text-left p-4 rounded-2xl border-2
+                    ${card.colorClass} ${card.borderColorClass}
+                  `}
+                >
+                  <span className={`text-white text-xs font-bold font-fredoka px-2 py-0.5 rounded-full ${card.badgeBg} mb-2`}>
+                    Level {card.level}
                   </span>
-                  <span className="font-baloo text-xl font-bold text-bark-brown leading-tight">
-                    {card.title}
-                  </span>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-2xl leading-none select-none" role="img" aria-hidden="true">
+                      {card.emoji}
+                    </span>
+                    <span className="font-baloo text-lg font-bold text-bark-brown leading-tight">
+                      {card.title}
+                    </span>
+                  </div>
+                  <p className="font-fredoka text-xs text-soil-brown/80 leading-snug">
+                    {card.description}
+                  </p>
                 </div>
-                {/* Subtitle description */}
-                <p className="font-fredoka text-sm text-soil-brown/80 leading-snug">
-                  {card.description}
-                </p>
-              </button>
-            ))}
+              ))}
+            </div>
           </div>
         </section>
 
