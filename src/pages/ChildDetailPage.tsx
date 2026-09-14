@@ -18,7 +18,7 @@ import GardenIllustration from "../components/ui/GardenIllustration";
 import Button from "../components/ui/Button";
 import RewardEngine from "../components/rewards/RewardEngine";
 import StickerSheetGallery from "../components/rewards/StickerSheetGallery";
-import WebcamScanner from "../components/rewards/WebcamScanner";
+import FloatingBackground from "../components/ui/FloatingBackground";
 
 // Ordered stage sequence for the advance control
 const STAGE_SEQUENCE: GardenStage[] = [
@@ -122,27 +122,28 @@ function AdvanceStageControl({ currentStage, childId, parentId }: AdvanceStageCo
   };
 
   return (
-    <div className="flex flex-col items-center gap-2 mt-2">
-      <span className="font-fredoka text-sm text-soil-brown/60">
-        Garden stage: <strong className="text-bark-brown">{STAGE_LABELS[currentStage]}</strong>
-      </span>
+    <div className="flex flex-col items-center gap-2.5 mt-2">
+      <div className="inline-flex items-center gap-2 bg-leaf-green/15 text-forest-green px-4 py-1.5 rounded-full font-fredoka text-sm shadow-xs">
+        <span className="text-soil-brown/70">Garden Stage:</span>
+        <strong className="text-forest-green font-bold">{STAGE_LABELS[currentStage]}</strong>
+      </div>
       {!isMax ? (
         <button
           onClick={handleAdvance}
           disabled={advancing}
           aria-label={`Advance garden stage to ${nextStage}`}
           className={`
-            text-xs font-fredoka px-4 py-1.5 rounded-full border
-            border-leaf-green/40 bg-white/60 text-forest-green
-            hover:bg-leaf-green/10 hover:border-forest-green
+            text-xs font-fredoka font-semibold px-4 py-1.5 rounded-full
+            bg-forest-green/10 text-forest-green
+            hover:bg-forest-green/20 active:scale-95
             transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed
-            cursor-pointer
+            cursor-pointer flex items-center gap-1.5 shadow-xs
           `}
         >
           {advancing ? "Growing…" : `↑ Advance to ${STAGE_LABELS[nextStage!]}`}
         </button>
       ) : (
-        <span className="text-xs font-fredoka text-leaf-green bg-leaf-green/10 px-3 py-1 rounded-full border border-leaf-green/30">
+        <span className="text-xs font-fredoka font-bold text-forest-green bg-leaf-green/20 px-4 py-1.5 rounded-full shadow-xs flex items-center gap-1">
           🌳 Maximum stage reached!
         </span>
       )}
@@ -215,9 +216,12 @@ export default function ChildDetailPage() {
   const visibleCards = REWARD_CARDS.slice(0, unlockedCount);
 
   return (
-    <div className="min-h-screen bg-cream-bg">
+    <div className="min-h-screen bg-cream-bg relative overflow-hidden flex flex-col">
+      {/* Ambient background */}
+      <FloatingBackground density="lush" />
+
       {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <header className="bg-gradient-to-r from-forest-green to-leaf-green px-4 py-4 shadow-md shadow-forest-green/20">
+      <header className="bg-gradient-to-r from-forest-green to-leaf-green px-4 py-4 shadow-md shadow-forest-green/20 relative z-10">
         <div className="max-w-2xl mx-auto flex items-center gap-4">
           <Button
             variant="ghost"
@@ -234,35 +238,61 @@ export default function ChildDetailPage() {
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-8 flex flex-col gap-8">
+      <main className="max-w-2xl mx-auto px-4 py-8 flex flex-col gap-8 relative z-10 w-full">
 
         {/* ── Garden snapshot + stats ────────────────────────────────────── */}
         <section
-          className="bg-white/70 rounded-3xl border border-leaf-green/20 shadow-sm p-6 flex flex-col items-center gap-4"
+          className="relative bg-white/85 backdrop-blur-sm rounded-3xl border-2 border-leaf-green/30 shadow-lg shadow-soil-brown/10 p-6 sm:p-7 flex flex-col items-center gap-5 overflow-hidden"
           aria-label="Garden overview"
         >
-          <GardenIllustration stage={child.gardenStage} className="w-36 h-36" />
+          {/* Subtle corner botanical accents */}
+          <span className="absolute top-3 left-3 text-lg opacity-35 select-none pointer-events-none" aria-hidden="true">
+            🌿
+          </span>
+          <span className="absolute top-3 right-3 text-lg opacity-35 select-none pointer-events-none" aria-hidden="true">
+            🌸
+          </span>
+
+          {/* Tree area with visual grounding & soft radial aura */}
+          <div className="relative flex flex-col items-center justify-center pt-2 pb-1">
+            {/* Soft radial background glow */}
+            <div 
+              className="absolute inset-0 rounded-full blur-xl pointer-events-none transform scale-110 opacity-70"
+              style={{
+                background: "radial-gradient(circle, rgba(127,176,105,0.25) 0%, rgba(168,218,220,0.2) 60%, transparent 100%)"
+              }}
+              aria-hidden="true"
+            />
+            
+            <GardenIllustration stage={child.gardenStage} className="w-36 h-36 relative z-10 filter drop-shadow-sm" />
+
+            {/* Soft grass / ground mound shape under tree */}
+            <div 
+              className="w-36 h-4 -mt-2.5 rounded-full bg-gradient-to-r from-leaf-green/30 via-forest-green/45 to-leaf-green/30 blur-[0.5px] opacity-80 relative z-0" 
+              aria-hidden="true"
+            />
+          </div>
 
           <h2 className="font-baloo text-3xl font-bold text-bark-brown text-center">
             {child.name}
           </h2>
 
-          {/* Stats row */}
-          <div className="flex gap-10">
-            <div className="flex flex-col items-center">
-              <span className="text-3xl">⭐</span>
-              <span className="font-baloo text-2xl font-bold text-bark-brown">{child.stickerCount}</span>
-              <span className="font-fredoka text-xs text-soil-brown/60">stickers</span>
+          {/* Stats row with soft colored chips */}
+          <div className="grid grid-cols-3 gap-3 w-full max-w-sm">
+            <div className="flex flex-col items-center justify-center py-2.5 px-2 rounded-2xl bg-sunshine-yellow/20 border border-sunshine-yellow/40 shadow-xs">
+              <span className="text-2xl mb-0.5" role="img" aria-hidden="true">⭐</span>
+              <span className="font-baloo text-2xl font-bold text-bark-brown leading-tight">{child.stickerCount}</span>
+              <span className="font-fredoka text-xs text-soil-brown/70">stickers</span>
             </div>
-            <div className="flex flex-col items-center">
-              <span className="text-3xl">🏅</span>
-              <span className="font-baloo text-2xl font-bold text-bark-brown">{child.badges?.length ?? 0}</span>
-              <span className="font-fredoka text-xs text-soil-brown/60">badges</span>
+            <div className="flex flex-col items-center justify-center py-2.5 px-2 rounded-2xl bg-flower-orange/20 border border-flower-orange/40 shadow-xs">
+              <span className="text-2xl mb-0.5" role="img" aria-hidden="true">🏅</span>
+              <span className="font-baloo text-2xl font-bold text-bark-brown leading-tight">{child.badges?.length ?? 0}</span>
+              <span className="font-fredoka text-xs text-soil-brown/70">badges</span>
             </div>
-            <div className="flex flex-col items-center">
-              <span className="text-3xl">🌟</span>
-              <span className="font-baloo text-2xl font-bold text-bark-brown">{stickerSheet.length}</span>
-              <span className="font-fredoka text-xs text-soil-brown/60">rewards</span>
+            <div className="flex flex-col items-center justify-center py-2.5 px-2 rounded-2xl bg-sky-blue/25 border border-sky-blue/50 shadow-xs">
+              <span className="text-2xl mb-0.5" role="img" aria-hidden="true">🌟</span>
+              <span className="font-baloo text-2xl font-bold text-bark-brown leading-tight">{stickerSheet.length}</span>
+              <span className="font-fredoka text-xs text-soil-brown/70">rewards</span>
             </div>
           </div>
 
@@ -274,41 +304,88 @@ export default function ChildDetailPage() {
           />
         </section>
 
-        {/* ── Gated Large Reward Card Tiles ──────────────────────────────── */}
-        <section aria-label="Available Rewards">
-          <WebcamScanner 
-            onRewardDetected={setActiveLevel}
-            unlockedCount={unlockedCount}
-          />
-          
-          <div className="mt-8">
-            <h3 className="font-baloo text-xl font-bold text-bark-brown mb-4 text-center">
-              Available Rewards Guide
+        {/* ── Single Large Reward Button & Unlocked Rewards ───────────────── */}
+        <section aria-label="Available Rewards" className="flex flex-col items-center gap-6">
+          {/* Main Action Reward Button */}
+          <button
+            onClick={() => setActiveLevel(unlockedCount as RewardLevel)}
+            disabled={activeLevel !== null}
+            className="
+              w-full py-5 px-6 rounded-3xl
+              bg-gradient-to-r from-forest-green via-leaf-green to-forest-green
+              text-white font-baloo shadow-xl shadow-forest-green/25
+              border-4 border-white/90
+              flex items-center justify-between gap-4
+              hover:scale-[1.02] active:scale-[0.98] hover:shadow-2xl
+              transition-all duration-200 cursor-pointer
+              disabled:opacity-50 disabled:cursor-not-allowed group
+            "
+            id="primary-reward-button"
+            aria-label={`Claim Level ${unlockedCount} Reward: ${REWARD_CARDS[unlockedCount - 1]?.title}`}
+          >
+            <div className="flex items-center gap-4 text-left">
+              <span className="text-4xl sm:text-5xl group-hover:scale-110 transition-transform">
+                {REWARD_CARDS[unlockedCount - 1]?.emoji}
+              </span>
+              <div>
+                <span className="inline-block bg-white/25 text-white text-xs font-fredoka font-bold px-3 py-0.5 rounded-full mb-1 tracking-wide">
+                  ⭐ Current Reward (Level {unlockedCount})
+                </span>
+                <h3 className="font-baloo text-xl sm:text-2xl font-extrabold leading-tight">
+                  Play {REWARD_CARDS[unlockedCount - 1]?.title}!
+                </h3>
+                <p className="font-fredoka text-xs sm:text-sm text-white/90">
+                  {REWARD_CARDS[unlockedCount - 1]?.description}
+                </p>
+              </div>
+            </div>
+            <span className="text-3xl sm:text-4xl text-white/90 group-hover:translate-x-1 group-hover:rotate-12 transition-transform select-none">
+              ✨
+            </span>
+          </button>
+
+          {/* Cards for all unlocked levels so child/parent can also replay previous unlocked levels */}
+          <div className="w-full">
+            <h3 className="font-baloo text-lg font-bold text-bark-brown mb-3 text-center">
+              Available Rewards ({unlockedCount} of 5 Unlocked)
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 opacity-75">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               {visibleCards.map((card) => (
-                <div
+                <button
                   key={card.level}
+                  onClick={() => setActiveLevel(card.level)}
+                  disabled={activeLevel !== null}
                   className={`
                     flex flex-col items-start text-left p-4 rounded-2xl border-2
                     ${card.colorClass} ${card.borderColorClass}
+                    transition-all duration-150 cursor-pointer
+                    hover:-translate-y-0.5 hover:shadow-md
+                    active:scale-98 disabled:opacity-50
                   `}
+                  id={`reward-card-${card.level}`}
                 >
-                  <span className={`text-white text-xs font-bold font-fredoka px-2 py-0.5 rounded-full ${card.badgeBg} mb-2`}>
-                    Level {card.level}
-                  </span>
+                  <div className="flex items-center justify-between w-full mb-2">
+                    <span className={`text-white text-xs font-bold font-fredoka px-2.5 py-0.5 rounded-full ${card.badgeBg}`}>
+                      Level {card.level}
+                    </span>
+                    {card.level === unlockedCount && (
+                      <span className="font-fredoka text-xs text-forest-green font-bold bg-white/80 px-2 py-0.5 rounded-full shadow-xs">
+                        ⭐ Highest
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-2xl leading-none select-none" role="img" aria-hidden="true">
                       {card.emoji}
                     </span>
-                    <span className="font-baloo text-lg font-bold text-bark-brown leading-tight">
+                    <span className="font-baloo text-base font-bold text-bark-brown leading-tight">
                       {card.title}
                     </span>
                   </div>
                   <p className="font-fredoka text-xs text-soil-brown/80 leading-snug">
                     {card.description}
                   </p>
-                </div>
+                </button>
               ))}
             </div>
           </div>

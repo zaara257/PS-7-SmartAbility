@@ -87,8 +87,8 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-cream-bg relative overflow-hidden flex flex-col">
-      {/* Ambient background - low density to stay calm on work dashboard */}
-      <FloatingBackground density="low" />
+      {/* Ambient background with clouds and fluttering butterflies */}
+      <FloatingBackground density="medium" />
 
       {/* ── Header ───────────────────────────────────────────── */}
       <header className="bg-gradient-to-r from-forest-green to-leaf-green shadow-md shadow-forest-green/20 relative z-10">

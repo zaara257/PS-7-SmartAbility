@@ -1,0 +1,53 @@
+/* src/components/rewards/balloons.css */
+/* Level 2 Balloon Burst — CSS Keyframe Animations */
+
+@keyframes balloonRise {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.98;
+  }
+  80% {
+    opacity: 0.98;
+  }
+  100% {
+    transform: translateY(calc(-100vh - 240px));
+    opacity: 0;
+  }
+}
+
+@keyframes balloonDrift {
+  0%, 100% {
+    transform: translateX(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateX(var(--sway-1, 20px)) rotate(var(--rot-1, 6deg));
+  }
+  50% {
+    transform: translateX(0px) rotate(0deg);
+  }
+  75% {
+    transform: translateX(var(--sway-2, -20px)) rotate(var(--rot-2, -6deg));
+  }
+}
+
+.balloon-rise-item {
+  position: absolute;
+  bottom: -140px;
+  pointer-events: none;
+  animation-name: balloonRise;
+  animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  animation-fill-mode: both;
+  animation-play-state: running;
+}
+
+.balloon-drift-inner {
+  pointer-events: none;
+  animation-name: balloonDrift;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-fill-mode: both;
+  animation-play-state: running;
+}

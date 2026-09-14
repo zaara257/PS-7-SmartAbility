@@ -28,53 +28,71 @@ export default function ChildCard({ child }: ChildCardProps) {
       aria-label={`Open ${child.name}'s garden`}
       initial={reduced ? {} : { opacity: 0, scale: 0.8, y: 20 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
-      whileHover={reduced ? {} : { scale: 1.04, y: -4 }}
+      whileHover={
+        reduced
+          ? {}
+          : {
+              scale: 1.04,
+              y: -5,
+              boxShadow: "0 18px 30px -8px rgba(107, 74, 61, 0.18)",
+            }
+      }
       whileTap={reduced ? {} : { scale: 0.97 }}
       transition={{ type: "spring", stiffness: 350, damping: 22 }}
       className="
-        w-full text-left bg-white/85 backdrop-blur-sm
-        rounded-3xl shadow-lg shadow-soil-brown/10
-        border border-white/70 overflow-hidden
+        w-full text-left bg-white/90 backdrop-blur-sm
+        rounded-3xl shadow-md shadow-soil-brown/10
+        border-2 border-leaf-green/25 overflow-hidden
         focus:outline-none focus:ring-4 focus:ring-forest-green/30
-        cursor-pointer group
+        cursor-pointer group relative
       "
     >
       {/* Color accent stripe using child's favourite color */}
       <div
-        className="h-2 w-full"
+        className="h-2.5 w-full"
         style={{ backgroundColor: child.favouriteColor }}
       />
 
-      {/* Garden illustration */}
-      <div className="flex justify-center pt-5 pb-2 bg-gradient-to-b from-sky-blue/10 to-transparent">
-        <GardenIllustration stage={child.gardenStage} className="w-24 h-24" />
+      {/* Garden plot illustration area with soft sky & soil ground base */}
+      <div className="relative flex flex-col items-center justify-center pt-5 pb-3 bg-gradient-to-b from-sky-blue/20 via-leaf-green/10 to-soil-brown/15 overflow-hidden">
+        <GardenIllustration stage={child.gardenStage} className="w-24 h-24 relative z-10 filter drop-shadow-xs group-hover:scale-105 transition-transform duration-200" />
+        
+        {/* Soft grounded grass & soil plot base */}
+        <div 
+          className="w-22 h-3.5 -mt-2 rounded-full bg-gradient-to-r from-leaf-green/40 via-soil-brown/30 to-leaf-green/40 blur-[0.5px] opacity-85 relative z-0" 
+          aria-hidden="true" 
+        />
       </div>
 
       {/* Info section */}
-      <div className="px-4 pb-5">
-        <h3 className="font-baloo text-lg font-bold text-bark-brown text-center">
+      <div className="px-4 pb-5 pt-2 flex flex-col items-center">
+        <h3 className="font-baloo text-lg font-bold text-bark-brown text-center leading-tight">
           {child.name}
         </h3>
-        <p className="text-xs font-fredoka text-soil-brown/70 text-center mb-3">
-          {stageLabels[child.gardenStage]}
-        </p>
+        
+        {/* Rounded stage pill with soft background */}
+        <div className="mt-1 mb-3">
+          <span className="text-[11px] font-fredoka font-semibold text-forest-green bg-leaf-green/15 px-2.5 py-0.5 rounded-full inline-block shadow-2xs">
+            {stageLabels[child.gardenStage]}
+          </span>
+        </div>
 
-        {/* Stats row */}
-        <div className="flex justify-around border-t border-leaf-green/20 pt-3">
+        {/* Stats row with soft chips */}
+        <div className="flex justify-around items-center w-full border-t border-leaf-green/20 pt-3">
           <div className="flex flex-col items-center gap-0.5">
-            <span className="text-xl">⭐</span>
-            <span className="text-xs font-fredoka font-semibold text-bark-brown">
+            <span className="text-lg leading-none">⭐</span>
+            <span className="text-xs font-fredoka font-bold text-bark-brown">
               {child.stickerCount}
             </span>
-            <span className="text-[10px] font-fredoka text-soil-brown/50">stickers</span>
+            <span className="text-[10px] font-fredoka text-soil-brown/60">stickers</span>
           </div>
-          <div className="w-px bg-leaf-green/20" />
+          <div className="w-px h-6 bg-leaf-green/25" />
           <div className="flex flex-col items-center gap-0.5">
-            <span className="text-xl">🏅</span>
-            <span className="text-xs font-fredoka font-semibold text-bark-brown">
+            <span className="text-lg leading-none">🏅</span>
+            <span className="text-xs font-fredoka font-bold text-bark-brown">
               {child.badges.length}
             </span>
-            <span className="text-[10px] font-fredoka text-soil-brown/50">badges</span>
+            <span className="text-[10px] font-fredoka text-soil-brown/60">badges</span>
           </div>
         </div>
       </div>

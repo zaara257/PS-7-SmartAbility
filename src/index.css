@@ -33,9 +33,7 @@
 
 /* ─── prefers-reduced-motion ─────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *:not(.allow-motion):not(.allow-motion *) {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -89,4 +87,40 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 input[type="number"] {
   -moz-appearance: textfield;
+}
+
+/* ─── Level 2 Balloon Burst Animations ───────────────────── */
+@keyframes balloonFloatUp {
+  0% {
+    transform: translateY(calc(100vh + 140px));
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.98;
+  }
+  82% {
+    opacity: 0.98;
+  }
+  100% {
+    transform: translateY(-160px);
+    opacity: 0;
+  }
+}
+
+@keyframes balloonSwayDrift {
+  0% {
+    transform: translateX(0px) rotate(0deg);
+  }
+  22% {
+    transform: translateX(var(--sway-1, 24px)) rotate(var(--rot-1, 6deg));
+  }
+  48% {
+    transform: translateX(var(--sway-2, -22px)) rotate(var(--rot-2, -6deg));
+  }
+  74% {
+    transform: translateX(var(--sway-3, 20px)) rotate(var(--rot-3, 5deg));
+  }
+  100% {
+    transform: translateX(var(--sway-4, -14px)) rotate(var(--rot-4, -3deg));
+  }
 }

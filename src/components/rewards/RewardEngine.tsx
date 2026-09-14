@@ -9,7 +9,6 @@
 // Double-tap/Double-fire guard: hasFiredRef prevents multiple Firestore writes if button is double-tapped.
 
 import { useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { doc, updateDoc, arrayUnion, increment } from "firebase/firestore";
 import { db } from "../../firebase";
 import { useAuth } from "../../contexts/AuthContext";
@@ -19,7 +18,7 @@ import { RHYME_POOL } from "../../constants/rhymes";
 import type { Child } from "../../types/child";
 import type { RewardLevel, StickerEntry } from "../../types/reward";
 import RewardVideoModal from "./RewardVideoModal";
-import CakeCuttingGame from "./CakeCuttingGame";
+import CakeCuttingParty from "./CakeCuttingParty";
 import ConfettiBalloons from "./ConfettiBalloons";
 import RhymeOverlay from "./RhymeOverlay";
 
@@ -163,42 +162,14 @@ export default function RewardEngine({ level, child, onComplete }: RewardEngineP
     );
   }
 
-  // Level 2: Confetti Balloons + Custom Continue Button
+  // Level 2: Full-Screen Confetti Balloons (self-contained overlay)
   if (level === 2) {
     return (
-      <AnimatePresence>
-        <motion.div
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-bark-brown/90 backdrop-blur-md p-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          <div className="relative w-full max-w-sm bg-cream-bg rounded-3xl p-6 border-4 border-sunshine-yellow shadow-2xl flex flex-col items-center gap-6 min-h-[320px]">
-            <ConfettiBalloons color={child.favouriteColor} active />
-            <div className="relative z-10 flex flex-col items-center gap-2 mt-8">
-              <span className="text-7xl animate-bounce" aria-hidden="true">🎉</span>
-              <p className="font-baloo text-3xl font-bold text-bark-brown">Amazing!</p>
-              <p className="font-fredoka text-sm text-soil-brown/60 text-center px-4">
-                Watch the balloons float up high!
-              </p>
-            </div>
-            <button
-              onClick={handleClaimReward}
-              className="
-                w-full mt-4 px-6 py-4 rounded-2xl
-                bg-gradient-to-r from-forest-green to-leaf-green
-                border-b-4 border-forest-green/80
-                text-white font-baloo text-lg font-bold
-                hover:brightness-105 active:scale-95 active:border-b-0 active:mt-1
-                transition-all cursor-pointer text-center
-              "
-              id="confetti-continue-btn"
-            >
-              Continue 🌱
-            </button>
-          </div>
-        </motion.div>
-      </AnimatePresence>
+      <ConfettiBalloons
+        color={child.favouriteColor}
+        active
+        onContinue={handleClaimReward}
+      />
     );
   }
 
@@ -213,44 +184,21 @@ export default function RewardEngine({ level, child, onComplete }: RewardEngineP
     );
   }
 
-  // Level 4: Rhyme Overlay + Custom Continue Button
+  // Level 4: Full-Screen Glassmorphic Rhyme Time (self-contained overlay)
   if (level === 4 && rhymePick) {
     return (
-      <AnimatePresence>
-        <motion.div
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-bark-brown/90 backdrop-blur-md p-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          <div className="relative w-full max-w-sm bg-cream-bg rounded-3xl p-6 border-4 border-sunshine-yellow shadow-2xl flex flex-col items-center gap-6">
-            <RhymeOverlay rhyme={rhymePick} />
-            <button
-              onClick={handleClaimReward}
-              className="
-                w-full px-6 py-4 rounded-2xl
-                bg-gradient-to-r from-forest-green to-leaf-green
-                border-b-4 border-forest-green/80
-                text-white font-baloo text-lg font-bold
-                hover:brightness-105 active:scale-95 active:border-b-0 active:mt-1
-                transition-all cursor-pointer text-center
-              "
-              id="rhyme-continue-btn"
-            >
-              Continue 🌱
-            </button>
-          </div>
-        </motion.div>
-      </AnimatePresence>
+      <RhymeOverlay
+        rhyme={rhymePick}
+        onContinue={handleClaimReward}
+      />
     );
   }
 
-  // Level 5: Interactive Cake Cutting Game
+  // Level 5: Interactive Cake Cutting Party
   if (level === 5) {
     return (
-      <CakeCuttingGame
-        theme={child.stickerTheme}
-        favouriteColor={child.favouriteColor}
+      <CakeCuttingParty
+        child={child}
         onComplete={handleClaimReward}
       />
     );
