@@ -18,6 +18,7 @@ import GardenIllustration from "../components/ui/GardenIllustration";
 import Button from "../components/ui/Button";
 import RewardEngine from "../components/rewards/RewardEngine";
 import StickerSheetGallery from "../components/rewards/StickerSheetGallery";
+import WebcamScanner from "../components/rewards/WebcamScanner";
 import FloatingBackground from "../components/ui/FloatingBackground";
 
 // Ordered stage sequence for the advance control
@@ -306,6 +307,10 @@ export default function ChildDetailPage() {
 
         {/* ── Single Large Reward Button & Unlocked Rewards ───────────────── */}
         <section aria-label="Available Rewards" className="flex flex-col items-center gap-6">
+          <WebcamScanner
+            onRewardDetected={setActiveLevel}
+            unlockedCount={unlockedCount}
+          />
           {/* Main Action Reward Button */}
           <button
             onClick={() => setActiveLevel(unlockedCount as RewardLevel)}
