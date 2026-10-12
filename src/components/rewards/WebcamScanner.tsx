@@ -5,9 +5,13 @@ import type { RewardLevel } from "../../types/reward";
 import Button from "../ui/Button";
 import {
   addVote,
+  ALL_REWARD_LEVELS,
+  canTriggerReward,
   evaluateScores,
+  GESTURE_V2_REWARD_LEVELS,
   GESTURE_LABELS,
   getStableLevel,
+  LEGACY_GESTURE_LABELS,
   MNIST_WRITTEN_DIGIT_LABELS,
   MNIST_WRITTEN_SCORE_CONFIG,
   normalizeHandLandmarks,
@@ -16,7 +20,8 @@ import {
 } from "./scannerLogic";
 import { preprocessMnistWrittenDigit } from "./mnistDigitPreprocessing";
 
-const DEFAULT_GESTURE_MODEL_URL = "/models/gesture/model.json";
+const DEFAULT_GESTURE_MODEL_URL = "/models/gesture-v2-prototype/model.json";
+const DEFAULT_LEGACY_GESTURE_MODEL_URL = "/models/gesture/model.json";
 const DEFAULT_WRITTEN_MODEL_URL = "/models/mnist-opencv-experiment/model.json";
 const MEDIAPIPE_WASM_URL = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1/wasm";
 const MEDIAPIPE_HAND_MODEL_URL = "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task";
@@ -31,15 +36,42 @@ type ScannerMessage = {
   text: string;
 };
 
+type GestureModelProfile = {
+  labels: readonly string[];
+  rewardLevels: readonly RewardLevel[];
+  defaultModelUrl: string;
+  prompt: string;
+  backgroundPrompt: string;
+};
+
+function gestureModelProfile(): GestureModelProfile {
+  if (import.meta.env.VITE_GESTURE_MODEL_PROFILE === "legacy") {
+    return {
+      labels: LEGACY_GESTURE_LABELS,
+      rewardLevels: ALL_REWARD_LEVELS,
+      defaultModelUrl: DEFAULT_LEGACY_GESTURE_MODEL_URL,
+      prompt: "Show one number hand sign inside the box 🌱",
+      backgroundPrompt: "Show one number hand sign inside the box.",
+    };
+  }
+  return {
+    labels: GESTURE_LABELS,
+    rewardLevels: GESTURE_V2_REWARD_LEVELS,
+    defaultModelUrl: DEFAULT_GESTURE_MODEL_URL,
+    prompt: "Show thumbs up, a V sign, an OK gesture, or a closed fist 🌱",
+    backgroundPrompt: "Show one of the four gesture signs inside the box.",
+  };
+}
+
 function labelsForMode(mode: ScannerMode) {
-  return mode === "gesture" ? GESTURE_LABELS : MNIST_WRITTEN_DIGIT_LABELS;
+  return mode === "gesture" ? gestureModelProfile().labels : MNIST_WRITTEN_DIGIT_LABELS;
 }
 
 function modelUrlForMode(mode: ScannerMode) {
   const configuredUrl = mode === "gesture"
     ? import.meta.env.VITE_GESTURE_CLASSIFIER_MODEL_URL
     : import.meta.env.VITE_WRITTEN_DIGIT_MODEL_URL;
-  return configuredUrl?.trim() || (mode === "gesture" ? DEFAULT_GESTURE_MODEL_URL : DEFAULT_WRITTEN_MODEL_URL);
+  return configuredUrl?.trim() || (mode === "gesture" ? gestureModelProfile().defaultModelUrl : DEFAULT_WRITTEN_MODEL_URL);
 }
 
 async function predictScores(model: tf.LayersModel, input: tf.Tensor) {
@@ -180,7 +212,7 @@ export default function WebcamScanner({ onRewardDetected, unlockedCount }: Webca
       setDetectedLevel(null);
       setDetectedConfidence(0);
       if (decision.kind === "background") {
-        setMessage({ tone: "neutral", text: activeMode === "gesture" ? "Show one number hand sign inside the box." : "Show one handwritten number inside the box." });
+        setMessage({ tone: "neutral", text: activeMode === "gesture" ? gestureModelProfile().backgroundPrompt : "Show one handwritten number inside the box." });
       } else if (decision.kind === "unclear") {
         setMessage({ tone: "neutral", text: "I can’t recognize that mark yet. You can try again." });
       } else {
@@ -188,8 +220,11 @@ export default function WebcamScanner({ onRewardDetected, unlockedCount }: Webca
       }
     }
 
-    const stableLevel = getStableLevel(votesRef.current);
-    if (stableLevel === null || hasRewardedRef.current || Date.now() < cooldownUntilRef.current) return;
+    const stableLevel = getStableLevel(
+      votesRef.current,
+      activeMode === "gesture" ? gestureModelProfile().rewardLevels : ALL_REWARD_LEVELS,
+    );
+    if (!canTriggerReward(stableLevel, hasRewardedRef.current, cooldownUntilRef.current, Date.now())) return;
 
     if (stableLevel > unlockedCountRef.current) {
       votesRef.current = [];
@@ -261,7 +296,7 @@ export default function WebcamScanner({ onRewardDetected, unlockedCount }: Webca
       isScanningRef.current = true;
       setIsScanning(true);
       setIsLoading(false);
-      setMessage({ tone: "neutral", text: selectedMode === "gesture" ? "Show one number hand sign inside the box 🌱" : "Show one handwritten number inside the box 🌱" });
+      setMessage({ tone: "neutral", text: selectedMode === "gesture" ? gestureModelProfile().prompt : "Show one handwritten number inside the box 🌱" });
       frameRequestRef.current = window.requestAnimationFrame(() => scanLoopRef.current());
     } catch (scanError: unknown) {
       console.error("[WebcamScanner] start error:", scanError);
@@ -305,7 +340,7 @@ export default function WebcamScanner({ onRewardDetected, unlockedCount }: Webca
             </button>
           </fieldset>
           <p className="text-sm text-soil-brown/80 text-center px-4 font-fredoka">
-            {mode === "gesture" ? "Show one hand gesture for a number from 1 to 5." : "Write one number from 1 to 5 on a hand, then show it to the camera."}
+            {mode === "gesture" ? "Thumbs up = 1, V sign = 2, OK gesture = 3, closed fist = 4." : "Write one number from 1 to 5 on a hand, then show it to the camera."}
           </p>
           <Button variant="primary" onClick={() => void startScanning()} disabled={isLoading} className="w-full py-3" aria-describedby={error ? "scanner-error" : "scanner-status"}>
             {isLoading ? "Loading Scanner…" : "Start Scanner"}
