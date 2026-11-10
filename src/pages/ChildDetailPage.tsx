@@ -20,6 +20,7 @@ import RewardEngine from "../components/rewards/RewardEngine";
 import StickerSheetGallery from "../components/rewards/StickerSheetGallery";
 import WebcamScanner from "../components/rewards/WebcamScanner";
 import FloatingBackground from "../components/ui/FloatingBackground";
+import { primeAudio } from "../utils/audioUnlocker";
 
 // Ordered stage sequence for the advance control
 const STAGE_SEQUENCE: GardenStage[] = [
@@ -49,45 +50,45 @@ interface RewardCardDef {
 const REWARD_CARDS: RewardCardDef[] = [
   {
     level: 1,
-    emoji: "🎟️",
-    title: "Stamp Video",
-    description: "Watch a fun animal, superhero, or fantasy video stamp!",
+    emoji: "🎉",
+    title: "Watch Your Reward! 🎉",
+    description: "Watch a joyful festival video reward!",
     colorClass: "bg-leaf-green/10",
     borderColorClass: "border-leaf-green/30",
     badgeBg: "bg-leaf-green",
   },
   {
     level: 2,
-    emoji: "🎈",
-    title: "Balloon Burst",
-    description: "Float colorful balloons with happy musical chimes!",
+    emoji: "✨",
+    title: "Watch Your Reward! 🎉",
+    description: "Watch a joyful festival video reward!",
     colorClass: "bg-sky-blue/15",
     borderColorClass: "border-sky-blue/40",
     badgeBg: "bg-forest-green",
   },
   {
     level: 3,
-    emoji: "🐾",
-    title: "Character Friend",
-    description: "Play a special video of your favorite animals & cartoons!",
+    emoji: "🌟",
+    title: "Watch Your Reward! 🎉",
+    description: "Watch a joyful festival video reward!",
     colorClass: "bg-flower-orange/15",
     borderColorClass: "border-flower-orange/40",
     badgeBg: "bg-flower-orange",
   },
   {
     level: 4,
-    emoji: "📜",
-    title: "Rhyme Time",
-    description: "Read a happy rhyme with loud clapping cheers!",
+    emoji: "🎊",
+    title: "Watch Your Reward! 🎉",
+    description: "Watch a joyful festival video reward!",
     colorClass: "bg-sunshine-yellow/15",
     borderColorClass: "border-sunshine-yellow/40",
     badgeBg: "bg-soil-brown",
   },
   {
     level: 5,
-    emoji: "🎂",
-    title: "Slice the Cake",
-    description: "Cut a delicious cake to celebrate your achievements!",
+    emoji: "🏆",
+    title: "Watch Your Reward! 🎉",
+    description: "Watch a grand festival video celebration!",
     colorClass: "bg-flower-pink/15",
     borderColorClass: "border-flower-pink/40",
     badgeBg: "bg-flower-pink",
@@ -163,6 +164,11 @@ export default function ChildDetailPage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [activeLevel, setActiveLevel] = useState<RewardLevel | null>(null);
+
+  const handleTriggerReward = (level: RewardLevel) => {
+    primeAudio();
+    setActiveLevel(level);
+  };
 
   // Real-time listener — keeps stickerSheet and stickerCount live
   useEffect(() => {
@@ -308,12 +314,12 @@ export default function ChildDetailPage() {
         {/* ── Single Large Reward Button & Unlocked Rewards ───────────────── */}
         <section aria-label="Available Rewards" className="flex flex-col items-center gap-6">
           <WebcamScanner
-            onRewardDetected={setActiveLevel}
+            onRewardDetected={handleTriggerReward}
             unlockedCount={unlockedCount}
           />
           {/* Main Action Reward Button */}
           <button
-            onClick={() => setActiveLevel(unlockedCount as RewardLevel)}
+            onClick={() => handleTriggerReward(unlockedCount as RewardLevel)}
             disabled={activeLevel !== null}
             className="
               w-full py-5 px-6 rounded-3xl
@@ -326,18 +332,18 @@ export default function ChildDetailPage() {
               disabled:opacity-50 disabled:cursor-not-allowed group
             "
             id="primary-reward-button"
-            aria-label={`Claim Level ${unlockedCount} Reward: ${REWARD_CARDS[unlockedCount - 1]?.title}`}
+            aria-label={`Claim Level ${unlockedCount} Reward`}
           >
             <div className="flex items-center gap-4 text-left">
               <span className="text-4xl sm:text-5xl group-hover:scale-110 transition-transform">
-                {REWARD_CARDS[unlockedCount - 1]?.emoji}
+                {REWARD_CARDS[unlockedCount - 1]?.emoji ?? "🎉"}
               </span>
               <div>
                 <span className="inline-block bg-white/25 text-white text-xs font-fredoka font-bold px-3 py-0.5 rounded-full mb-1 tracking-wide">
-                  ⭐ Current Reward (Level {unlockedCount})
+                  Level {unlockedCount}
                 </span>
                 <h3 className="font-baloo text-xl sm:text-2xl font-extrabold leading-tight">
-                  Play {REWARD_CARDS[unlockedCount - 1]?.title}!
+                  Watch Your Reward! 🎉
                 </h3>
                 <p className="font-fredoka text-xs sm:text-sm text-white/90">
                   {REWARD_CARDS[unlockedCount - 1]?.description}
@@ -358,7 +364,7 @@ export default function ChildDetailPage() {
               {visibleCards.map((card) => (
                 <button
                   key={card.level}
-                  onClick={() => setActiveLevel(card.level)}
+                  onClick={() => handleTriggerReward(card.level)}
                   disabled={activeLevel !== null}
                   className={`
                     flex flex-col items-start text-left p-4 rounded-2xl border-2

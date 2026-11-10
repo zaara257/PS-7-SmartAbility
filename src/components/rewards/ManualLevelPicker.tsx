@@ -1,19 +1,22 @@
 // src/components/rewards/ManualLevelPicker.tsx
-// Dev/therapist affordance — 5 buttons that trigger a level reward.
+// Dev/therapist affordance — 5 buttons that trigger a level video reward.
 // Intentionally simple (no Framer Motion flourish) — this is parent-facing,
 // not child-facing. Disabled while a reward is playing.
 
+import type { RewardLevel } from "../../types/reward";
+import { primeAudio } from "../../utils/audioUnlocker";
+
 interface ManualLevelPickerProps {
-  onSelect: (level: 1 | 2 | 3 | 4 | 5) => void;
+  onSelect: (level: RewardLevel) => void;
   disabled?: boolean;
 }
 
 const LEVELS = [
-  { level: 1 as const, emoji: "🔖", label: "Stamp",     subtitle: "2s" },
-  { level: 2 as const, emoji: "🎈", label: "Confetti",  subtitle: "4s" },
-  { level: 3 as const, emoji: "🐾", label: "Character", subtitle: "7s" },
-  { level: 4 as const, emoji: "📜", label: "Rhyme",     subtitle: "10s" },
-  { level: 5 as const, emoji: "🎂", label: "Party",     subtitle: "15s" },
+  { level: 1 as const, emoji: "🎉", label: "Level 1", subtitle: "Video" },
+  { level: 2 as const, emoji: "✨", label: "Level 2", subtitle: "Video" },
+  { level: 3 as const, emoji: "🌟", label: "Level 3", subtitle: "Video" },
+  { level: 4 as const, emoji: "🎊", label: "Level 4", subtitle: "Video" },
+  { level: 5 as const, emoji: "🏆", label: "Level 5", subtitle: "Video" },
 ];
 
 export default function ManualLevelPicker({ onSelect, disabled = false }: ManualLevelPickerProps) {
@@ -28,7 +31,10 @@ export default function ManualLevelPicker({ onSelect, disabled = false }: Manual
           <button
             key={level}
             id={`level-picker-${level}`}
-            onClick={() => onSelect(level)}
+            onClick={() => {
+              primeAudio();
+              onSelect(level);
+            }}
             disabled={disabled}
             aria-label={`Trigger Level ${level} reward (${label})`}
             className={`

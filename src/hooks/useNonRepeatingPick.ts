@@ -1,45 +1,34 @@
 // src/hooks/useNonRepeatingPick.ts
-// Server-persisted non-repeating pick hook.
-//
-// Reads the relevant lastXIndex from Firestore rewardState, picks a random
-// index ≠ last, writes the new index back, and returns the picked item.
-// Using Firestore as the source of truth means non-repeat is enforced
-// across sessions and tabs — not just in-memory.
+// Server-persisted non-repeating pick hook for level video rewards.
+// Reads lastVideoIndexByLevel[level] from Firestore rewardState, picks a random
+// index != last, writes the new index back, and returns the picked item.
 
 import { useState, useEffect, useRef } from "react";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
-import type { RewardState } from "../types/reward";
-
-type RewardStateKey = keyof RewardState;
+import type { RewardLevel } from "../types/reward";
 
 interface UseNonRepeatingPickResult<T> {
   pick: T | null;
   loading: boolean;
 }
 
-/**
- * @param pool        - The array to pick from.
- * @param parentId    - Firestore parent UID (for the child doc path).
- * @param childId     - Firestore child document ID.
- * @param poolKey     - Which rewardState key to read/write (e.g. "lastStampIndex").
- */
 export function useNonRepeatingPick<T>(
   pool: T[],
   parentId: string,
   childId: string,
-  poolKey: RewardStateKey,
+  level: RewardLevel,
 ): UseNonRepeatingPickResult<T> {
   const [pick, setPick] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const hasFired = useRef(false);
 
   useEffect(() => {
-    // Guard against StrictMode double-fire
+    // Guard against React StrictMode double-fire
     if (hasFired.current) return;
     hasFired.current = true;
 
-    if (!parentId || !childId || pool.length === 0) {
+    if (!parentId || !childId || !pool || pool.length === 0) {
       setLoading(false);
       return;
     }
@@ -50,11 +39,11 @@ export function useNonRepeatingPick<T>(
         const snap = await getDoc(ref);
         const data = snap.data();
 
-        // Read the last index (may not exist on first run)
+        // Read the last index for this level
         const lastIndex: number | null =
-          data?.rewardState?.[poolKey] ?? null;
+          data?.rewardState?.lastVideoIndexByLevel?.[level] ?? null;
 
-        // Pick a random index ≠ last (fallback to 0 if pool has only 1 item)
+        // Pick a random index != last (fallback to 0 if pool has only 1 item)
         let newIndex: number;
         if (pool.length === 1) {
           newIndex = 0;
@@ -64,23 +53,32 @@ export function useNonRepeatingPick<T>(
           } while (newIndex === lastIndex);
         }
 
-        // Write back new index
-        await updateDoc(ref, {
-          [`rewardState.${poolKey}`]: newIndex,
-        });
+        // Write back new index using setDoc merge to guarantee nested path exists
+        await setDoc(
+          ref,
+          {
+            rewardState: {
+              lastVideoIndexByLevel: {
+                [level]: newIndex,
+              },
+            },
+          },
+          { merge: true },
+        );
 
         setPick(pool[newIndex]);
       } catch (err) {
         console.error("[useNonRepeatingPick] error:", err);
-        // Graceful fallback: pick index 0 without persisting
-        setPick(pool[0]);
+        // Fallback: pick random without repeating if possible, or index 0
+        const fallbackIndex = Math.floor(Math.random() * pool.length);
+        setPick(pool[fallbackIndex]);
       } finally {
         setLoading(false);
       }
     };
 
     run();
-  }, [parentId, childId, poolKey]); // stable primitives
+  }, [parentId, childId, level, pool]);
 
   return { pick, loading };
 }

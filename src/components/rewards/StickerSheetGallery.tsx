@@ -1,6 +1,6 @@
 // src/components/rewards/StickerSheetGallery.tsx
 // Chronological gallery of all past rewards for a child.
-// Supports both v1 (generated) and v2 (video/interactive) sticker entries.
+// Supports unified festival video entries and legacy v1/v2 sticker entries.
 
 import { motion } from "framer-motion";
 import type { StickerEntry } from "../../types/reward";
@@ -35,8 +35,41 @@ const LEVEL_COLORS: Record<number, string> = {
   5: "#F2A6B0",
 };
 
+function VideoCard({ entry }: { entry: StickerEntry }) {
+  const p = entry.payload as { level?: number; videoSrc?: string };
+  const levelNum = p.level ?? entry.level;
+
+  let videoName = `Level ${levelNum} Reward`;
+  if (p.videoSrc) {
+    const rawFileName = p.videoSrc.split("/").pop() || "";
+    const cleanName = decodeURIComponent(rawFileName.replace(/\.[^/.]+$/, ""))
+      .replace(/_/g, " ")
+      .trim();
+    if (cleanName) {
+      videoName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-3">
+      <div className="w-10 h-10 rounded-2xl bg-forest-green/15 text-forest-green flex items-center justify-center text-xl flex-shrink-0 border border-forest-green/30">
+        🎬
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="font-fredoka text-bark-brown font-semibold text-sm truncate">
+          {videoName}
+        </p>
+        <p className="font-fredoka text-soil-brown/50 text-xs">{formatTime(entry.timestamp)}</p>
+      </div>
+      <span className="text-xs font-fredoka font-medium text-forest-green bg-forest-green/10 px-2.5 py-0.5 rounded-full select-none ml-auto">
+        ▶ Video
+      </span>
+    </div>
+  );
+}
+
 function StampCard({ entry }: { entry: StickerEntry }) {
-  const p = entry.payload;
+  const p = entry.payload as Record<string, unknown>;
   // Render v1 emoji if present, else fallback to a pretty stamp ticket emoji
   const emoji = String(p.emoji ?? "🎟️");
   const label = String(p.label ?? "Stamp reward");
@@ -57,7 +90,8 @@ function StampCard({ entry }: { entry: StickerEntry }) {
 }
 
 function ConfettiCard({ entry }: { entry: StickerEntry }) {
-  const color = String(entry.payload.color ?? "#7FB069");
+  const p = entry.payload as Record<string, unknown>;
+  const color = String(p.color ?? "#7FB069");
   return (
     <div className="flex items-center gap-3">
       <span
@@ -75,7 +109,7 @@ function ConfettiCard({ entry }: { entry: StickerEntry }) {
 }
 
 function QuoteCard({ entry }: { entry: StickerEntry }) {
-  const p = entry.payload;
+  const p = entry.payload as Record<string, unknown>;
   
   // Handing v2 character video entries
   if (p.videoSrc) {
@@ -115,7 +149,7 @@ function QuoteCard({ entry }: { entry: StickerEntry }) {
 }
 
 function RhymeCard({ entry }: { entry: StickerEntry }) {
-  const p = entry.payload;
+  const p = entry.payload as Record<string, unknown>;
   return (
     <div className="flex items-center gap-3">
       <span className="text-3xl" role="img" aria-label="rhyme">{String(p.emoji ?? "📜")}</span>
@@ -129,7 +163,7 @@ function RhymeCard({ entry }: { entry: StickerEntry }) {
 }
 
 function PartyCard({ entry }: { entry: StickerEntry }) {
-  const p = entry.payload;
+  const p = entry.payload as Record<string, unknown>;
   const isGame = p.completedGame ? "Cake Slice Game" : `${String(p.theme)} theme`;
 
   return (
@@ -163,15 +197,16 @@ function StickerCard({ entry, index }: { entry: StickerEntry; index: number }) {
         className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-fredoka font-semibold text-white mb-2"
         style={{ background: accentColor }}
       >
-        Lv {entry.level} — {LEVEL_LABELS[entry.level]}
+        Lv {entry.level} — {entry.type === "video" ? `Level ${entry.level} Video` : (LEVEL_LABELS[entry.level] ?? `Level ${entry.level}`)}
       </div>
 
       {/* Type-specific content */}
-      {entry.type === "stamp"     && <StampCard    entry={entry} />}
+      {entry.type === "video"     && <VideoCard     entry={entry} />}
+      {entry.type === "stamp"     && <StampCard     entry={entry} />}
       {entry.type === "confetti"  && <ConfettiCard  entry={entry} />}
-      {entry.type === "quoteCard" && <QuoteCard    entry={entry} />}
-      {entry.type === "rhyme"     && <RhymeCard    entry={entry} />}
-      {entry.type === "party"     && <PartyCard    entry={entry} />}
+      {entry.type === "quoteCard" && <QuoteCard     entry={entry} />}
+      {entry.type === "rhyme"     && <RhymeCard     entry={entry} />}
+      {entry.type === "party"     && <PartyCard     entry={entry} />}
     </motion.div>
   );
 }
