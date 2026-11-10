@@ -73,6 +73,17 @@ export const MNIST_WRITTEN_SCORE_CONFIG: ModeScannerConfig = {
 
 // Backward-compatible alias for existing imports
 export const SCANNER_CONFIG = GESTURE_SCANNER_CONFIG;
+export const GESTURE_V2_REWARD_LEVELS = [1, 2, 3, 4] as const;
+export const ALL_REWARD_LEVELS = [1, 2, 3, 4, 5] as const;
+
+export function canTriggerReward(
+  stableLevel: RewardLevel | null,
+  hasAlreadyTriggered: boolean,
+  cooldownUntil: number,
+  now: number,
+): stableLevel is RewardLevel {
+  return stableLevel !== null && !hasAlreadyTriggered && now >= cooldownUntil;
+}
 
 export type EvaluationDecision =
   | { kind: "candidate"; level: RewardLevel; confidence: number; reason?: string }
@@ -469,8 +480,25 @@ export function getStableLevelTimeBased(
 // Backward-compatible alias
 export function getStableLevel(
   votes: Array<RewardLevel | null>,
-  threshold = 5
+  thresholdOrSupported: number | readonly RewardLevel[] = 5
 ): RewardLevel | null {
+  if (Array.isArray(thresholdOrSupported)) {
+    const supportedLevels = thresholdOrSupported;
+    const windowSize = 12;
+    const minVoteRatio = 0.75;
+    const minimumVotes = Math.ceil(windowSize * minVoteRatio);
+    if (votes.length < minimumVotes) return null;
+
+    for (const level of supportedLevels) {
+      const matchCount = votes.filter((v) => v === level).length;
+      if (matchCount >= minimumVotes && matchCount / votes.length >= minVoteRatio) {
+        return level;
+      }
+    }
+    return null;
+  }
+
+  const threshold = thresholdOrSupported;
   if (votes.length < threshold) {
     return null;
   }
