@@ -8,6 +8,7 @@ on:
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
+    environment: Secret_Environment
     steps:
       - uses: actions/checkout@v4
 
@@ -25,6 +26,6 @@ jobs:
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT || secrets.FIREBASE_SERVICE_ACCOUNT_SMART_ABILITY }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
           channelId: live
           projectId: smart-ability
