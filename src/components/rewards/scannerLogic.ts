@@ -482,7 +482,7 @@ export function getStableLevel(
   votes: Array<RewardLevel | null>,
   thresholdOrSupported: number | readonly RewardLevel[] = 5
 ): RewardLevel | null {
-  if (Array.isArray(thresholdOrSupported)) {
+  if (typeof thresholdOrSupported !== "number") {
     const supportedLevels = thresholdOrSupported;
     const windowSize = 12;
     const minVoteRatio = 0.75;
